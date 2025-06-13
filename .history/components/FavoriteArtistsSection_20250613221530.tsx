@@ -20,7 +20,7 @@ export function FavoriteArtistsSection({ artists }: Props) {
         keyExtractor={item => item.id.toString()}
         showsHorizontalScrollIndicator={false}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.artistCard} onPress={() => router.push({ pathname: '/artist/[id]', params: { id: String(item.id) } })}>
+          <TouchableOpacity style={styles.artistCard} onPress={() => router.push(`/artist/${item.id}`)}>
             <Image source={{ uri: item.avatar }} style={styles.avatar} />
             <View>
               <Text style={styles.artistName} numberOfLines={1}>{item.name}</Text>
