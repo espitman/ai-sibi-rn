@@ -4,12 +4,55 @@ import { Track, TracksResponseSchema } from '@/schemas/track';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
-import { ActivityIndicator, Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { ActivityIndicator, Animated, Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const HEADER_HEIGHT = 240;
 const COVER_SIZE = 100;
-const { height } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
+
+// Animated text component for long titles
+function AnimatedTrackTitle({ title }: { title: string }) {
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const textWidth = useRef(0);
+  const containerWidth = useRef(0);
+
+  useEffect(() => {
+    if (textWidth.current > containerWidth.current) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(scrollX, {
+            toValue: -(textWidth.current - containerWidth.current),
+            duration: 5000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scrollX, {
+            toValue: 0,
+            duration: 5000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [title]);
+
+  return (
+    <View style={styles.titleContainer} onLayout={(e) => containerWidth.current = e.nativeEvent.layout.width}>
+      <Animated.Text
+        style={[
+          styles.trackTitle,
+          {
+            transform: [{ translateX: scrollX }],
+          },
+        ]}
+        onLayout={(e) => textWidth.current = e.nativeEvent.layout.width}
+        numberOfLines={1}
+      >
+        {title}
+      </Animated.Text>
+    </View>
+  );
+}
 
 export default function AlbumDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -78,7 +121,7 @@ export default function AlbumDetailScreen() {
       renderItem={({ item, index }) => (
         <View style={styles.trackRow}>
           <Text style={styles.trackNumber}>{index + 1}</Text>
-          <Text style={styles.trackTitle}>{item.title}</Text>
+          <AnimatedTrackTitle title={item.title} />
           <TouchableOpacity>
             <Ionicons name="play-outline" size={22} color="#bdbdbd" />
           </TouchableOpacity>
@@ -174,11 +217,14 @@ const styles = StyleSheet.create({
     width: 28,
     textAlign: 'center',
   },
+  titleContainer: {
+    flex: 1,
+    marginLeft: 8,
+    overflow: 'hidden',
+  },
   trackTitle: {
     color: '#fff',
     fontSize: 17,
-    flex: 1,
-    marginLeft: 8,
   },
   trackDuration: {
     color: '#bdbdbd',

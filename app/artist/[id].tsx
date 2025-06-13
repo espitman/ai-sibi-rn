@@ -47,11 +47,14 @@ export default function ArtistScreen() {
       numColumns={2}
       keyExtractor={album => album.id.toString()}
       renderItem={({ item: album }) => (
-        <View style={styles.albumCard}>
+        <TouchableOpacity 
+          style={styles.albumCard} 
+          onPress={() => router.push(`/album/${album.id}`)}
+        >
           <Image source={{ uri: album.cover }} style={styles.cover} />
           <Text style={styles.albumTitle} numberOfLines={1}>{album.title}</Text>
           <Text style={styles.albumMeta}>{album.release_year} • {album.genre}</Text>
-        </View>
+        </TouchableOpacity>
       )}
       ListHeaderComponent={
         <>
