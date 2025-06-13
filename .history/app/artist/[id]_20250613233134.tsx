@@ -8,8 +8,8 @@ import React from 'react';
 import { Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
-const CARD_MARGIN = 8;
-const CARD_WIDTH = (width - CARD_MARGIN * 4) / 2;
+const CARD_MARGIN = 0;
+const CARD_WIDTH = (width - 2 * 8 * 3) / 2;
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -68,7 +68,7 @@ export default function ArtistScreen() {
           <Text style={styles.sectionTitle}>Albums</Text>
         </>
       }
-      contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: 0 }}
+      contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: CARD_MARGIN }}
     />
   );
 }
