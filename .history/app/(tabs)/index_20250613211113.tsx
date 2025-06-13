@@ -4,7 +4,7 @@ import { RandomAlbumsSection } from '@/components/RandomAlbumsSection';
 import { RecentlyAddedAlbumsSection } from '@/components/RecentlyAddedAlbumsSection';
 import { useApiQuery } from '@/hooks/useApiService';
 import { homeSchema, type HomeData } from '@/schemas/home';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 export default function HomeScreen() {
   const { data, isLoading, error } = useApiQuery<HomeData>(
