@@ -4,12 +4,11 @@ import { ArtistResponseSchema } from '@/schemas/artist';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
 import { Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 8;
-const CARD_WIDTH = (width - 2 * CARD_MARGIN * 3) / 2;
+const CARD_WIDTH = (width - CARD_MARGIN * 3) / 2;
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

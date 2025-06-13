@@ -4,12 +4,11 @@ import { ArtistResponseSchema } from '@/schemas/artist';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
-import { Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 8;
-const CARD_WIDTH = (width - 2 * CARD_MARGIN * 3) / 2;
+const CARD_WIDTH = (width - CARD_MARGIN * 3) / 2;
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,37 +38,35 @@ export default function ArtistScreen() {
   const albums = albumsData?.payload || [];
 
   return (
-    <FlatList
-      data={albums}
-      numColumns={2}
-      keyExtractor={album => album.id.toString()}
-      renderItem={({ item: album }) => (
-        <View style={styles.albumCard}>
-          <Image source={{ uri: album.cover }} style={styles.cover} />
-          <Text style={styles.albumTitle} numberOfLines={1}>{album.title}</Text>
-          <Text style={styles.albumMeta}>{album.release_year} • {album.genre}</Text>
+    <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 32}}>
+      <View style={styles.header}>
+        <Image source={{ uri: artist.avatar }} style={styles.headerBg} blurRadius={10} />
+        <BlurView intensity={60} style={StyleSheet.absoluteFill} tint="dark" />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={28} color="#fff" />
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Image source={{ uri: artist.avatar }} style={styles.avatar} />
+          <Text style={styles.name}>{artist.name}</Text>
+          <Text style={styles.meta}>Albums: {artist.albums_count} | Tracks: {artist.tracks_count}</Text>
+          <Text style={styles.meta}>Born: {artist.birth_year}/{artist.birth_month}/{artist.birth_day}</Text>
         </View>
-      )}
-      ListHeaderComponent={
-        <>
-          <View style={styles.header}>
-            <Image source={{ uri: artist.avatar }} style={styles.headerBg} blurRadius={10} />
-            <BlurView intensity={60} style={StyleSheet.absoluteFill} tint="dark" />
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={28} color="#fff" />
-            </TouchableOpacity>
-            <View style={styles.headerContent}>
-              <Image source={{ uri: artist.avatar }} style={styles.avatar} />
-              <Text style={styles.name}>{artist.name}</Text>
-              <Text style={styles.meta}>Albums: {artist.albums_count} | Tracks: {artist.tracks_count}</Text>
-              <Text style={styles.meta}>Born: {artist.birth_year}/{artist.birth_month}/{artist.birth_day}</Text>
-            </View>
+      </View>
+      <Text style={styles.sectionTitle}>Albums</Text>
+      <FlatList
+        data={albums}
+        numColumns={2}
+        keyExtractor={album => album.id.toString()}
+        renderItem={({ item: album }) => (
+          <View style={styles.albumCard}>
+            <Image source={{ uri: album.cover }} style={styles.cover} />
+            <Text style={styles.albumTitle} numberOfLines={1}>{album.title}</Text>
+            <Text style={styles.albumMeta}>{album.release_year} • {album.genre}</Text>
           </View>
-          <Text style={styles.sectionTitle}>Albums</Text>
-        </>
-      }
-      contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: CARD_MARGIN }}
-    />
+        )}
+        contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: CARD_MARGIN }}
+      />
+    </ScrollView>
   );
 }
 
