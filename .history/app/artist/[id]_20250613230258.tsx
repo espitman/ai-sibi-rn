@@ -153,6 +153,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 2,
     textAlign: 'left',
     width: '100%',
     paddingHorizontal: 16,

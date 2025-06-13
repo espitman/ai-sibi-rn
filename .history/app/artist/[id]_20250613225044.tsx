@@ -1,19 +1,17 @@
 import { useApiQuery } from '@/hooks/useApiService';
 import { ArtistAlbumsResponseSchema } from '@/schemas/album';
 import { ArtistResponseSchema } from '@/schemas/artist';
-import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Dimensions, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { Dimensions, FlatList, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 8;
-const CARD_WIDTH = (width - CARD_MARGIN * 3) / 2;
+const CARD_WIDTH = (width - 2*CARD_MARGIN * 3) / 2;
 
 export default function ArtistScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const artistId = id ? parseInt(id, 10) : undefined;
-  const router = useRouter();
 
   const { data: artistData, isLoading: artistLoading, error: artistError } = useApiQuery(
     `/admin/artist/${artistId}`,
@@ -42,9 +40,6 @@ export default function ArtistScreen() {
       <View style={styles.header}>
         <Image source={{ uri: artist.avatar }} style={styles.headerBg} blurRadius={10} />
         <BlurView intensity={60} style={StyleSheet.absoluteFill} tint="dark" />
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={28} color="#fff" />
-        </TouchableOpacity>
         <View style={styles.headerContent}>
           <Image source={{ uri: artist.avatar }} style={styles.avatar} />
           <Text style={styles.name}>{artist.name}</Text>
@@ -94,15 +89,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 36,
-    left: 16,
-    zIndex: 2,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: 20,
-    padding: 4,
   },
   headerContent: {
     alignItems: 'center',
