@@ -22,8 +22,8 @@ export function FavoriteArtistsSection({ artists }: Props) {
         showsHorizontalScrollIndicator={false}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.artistCard} onPress={() => router.push({ pathname: '/artist/[id]', params: { id: String(item.id) } })}>
-            <Image source={{ uri: item.avatar }} style={styles.bgImage} blurRadius={10}  />
-            <BlurView intensity={60} style={StyleSheet.absoluteFill} tint="dark" />
+            <Image source={{ uri: item.avatar }} style={styles.bgImage} />
+            <BlurView intensity={40} style={StyleSheet.absoluteFill,{...opacity:.5}} tint="default" />
             <View style={styles.contentRow}>
               <Image source={{ uri: item.avatar }} style={styles.avatar} />
               <View>
