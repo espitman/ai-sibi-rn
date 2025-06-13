@@ -1,3 +1,4 @@
+import { usePlayer } from '@/components/PlayerContext';
 import { useApiQuery } from '@/hooks/useApiService';
 import { Album, AlbumDetailResponseSchema } from '@/schemas/album';
 import { Track, TracksResponseSchema } from '@/schemas/track';
@@ -58,6 +59,7 @@ export default function AlbumDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const albumId = id ? parseInt(id, 10) : undefined;
   const router = useRouter();
+  const { openPlayer } = usePlayer();
 
   const { data: albumData, isLoading: albumLoading, error: albumError } = useApiQuery(
    `/admin/album/${albumId}`,
@@ -122,7 +124,7 @@ export default function AlbumDetailScreen() {
         <View style={styles.trackRow}>
           <Text style={styles.trackNumber}>{index + 1}</Text>
           <AnimatedTrackTitle title={item.title} />
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => openPlayer(tracks, item, album)}>
             <Ionicons name="play-outline" size={22} color="#bdbdbd" />
           </TouchableOpacity>
           <Text style={styles.trackDuration}>{formatDuration(item.duration)}</Text>
