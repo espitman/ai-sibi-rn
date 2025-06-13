@@ -37,9 +37,6 @@ export default function ArtistScreen() {
 
   const artist = artistData.payload;
   const albums = albumsData?.payload || [];
-  
-  // Calculate total tracks from all albums
-  const totalTracks = albums.reduce((sum, album) => sum + album.tracks_count, 0);
 
   return (
     <FlatList
@@ -64,7 +61,7 @@ export default function ArtistScreen() {
             <View style={styles.headerContent}>
               <Image source={{ uri: artist.avatar }} style={styles.avatar} />
               <Text style={styles.name}>{artist.name}</Text>
-              <Text style={styles.meta}>Albums: {albums.length} | Tracks: {totalTracks}</Text>
+              <Text style={styles.meta}>Albums: {artist.albums_count} | Tracks: {artist.tracks_count}</Text>
               <Text style={styles.meta}>Born: {artist.birth_year}/{artist.birth_month}/{artist.birth_day}</Text>
             </View>
           </View>
