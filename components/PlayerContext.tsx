@@ -2,6 +2,8 @@ import { Album } from '@/schemas/album';
 import { Track } from '@/schemas/track';
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 
+export const PLAYER_HEIGHT = 110;
+
 interface PlayerContextType {
   tracks: Track[];
   currentTrack: Track | null;

@@ -140,12 +140,12 @@ export default function Player() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: 8,
-    right: 8,
+    left: 0,
+    right: 0,
     bottom: PLAYER_HEIGHT,
     height: PLAYER_HEIGHT,
     backgroundColor: '#181818',
-    borderRadius: 16,
+    borderRadius: 0,
     shadowColor: '#000',
     shadowOpacity: 0.18,
     shadowRadius: 8,

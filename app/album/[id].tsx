@@ -59,7 +59,7 @@ export default function AlbumDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const albumId = id ? parseInt(id, 10) : undefined;
   const router = useRouter();
-  const { openPlayer } = usePlayer();
+  const { openPlayer, isOpen } = usePlayer();
 
   const { data: albumData, isLoading: albumLoading, error: albumError } = useApiQuery(
    `/admin/album/${albumId}`,

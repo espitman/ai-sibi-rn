@@ -1,8 +1,10 @@
+import { PLAYER_HEIGHT, usePlayer } from '@/components/PlayerContext';
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function SettingsScreen() {
+  const { isOpen } = usePlayer();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: isOpen ? PLAYER_HEIGHT : 0 }] }>
       <Text style={styles.title}>Settings</Text>
     </View>
   );
