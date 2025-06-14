@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { usePlayer } from './PlayerContext';
@@ -6,44 +7,96 @@ import { usePlayer } from './PlayerContext';
 const PLAYER_HEIGHT = 110;
 
 export default function Player() {
-  const { isOpen, currentTrack, tracks, album, closePlayer } = usePlayer();
+  const { isOpen, currentTrack, tracks, album, closePlayer, setCurrentTrack } = usePlayer();
   const [progress, setProgress] = useState(0); // seconds
   const [duration, setDuration] = useState(currentTrack?.duration || 0);
-  const translateY = useRef(new Animated.Value(PLAYER_HEIGHT)).current;
-  const [sliderWidth, setSliderWidth] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [sliderWidth, setSliderWidth] = useState(0);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const translateY = useRef(new Animated.Value(PLAYER_HEIGHT)).current;
 
+  // Load and play audio when currentTrack changes
   useEffect(() => {
-    if (isOpen) {
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-      setProgress(0);
-      setDuration(currentTrack?.duration || 0);
+    let isMounted = true;
+    async function loadAndPlay() {
+      if (sound) {
+        await sound.unloadAsync();
+        setSound(null);
+      }
+      if (currentTrack?.url) {
+        const { sound: newSound, status } = await Audio.Sound.createAsync(
+          { uri: currentTrack.url },
+          { shouldPlay: true },
+          onPlaybackStatusUpdate
+        );
+        if (isMounted) {
+          setSound(newSound);
+          if (status.isLoaded) {
+            setDuration(status.durationMillis ? Math.floor(status.durationMillis / 1000) : currentTrack.duration || 0);
+            setProgress(status.positionMillis ? Math.floor(status.positionMillis / 1000) : 0);
+          } else {
+            setDuration(currentTrack.duration || 0);
+            setProgress(0);
+          }
+          setIsPlaying(true);
+        }
+      }
+    }
+    if (isOpen && currentTrack) {
+      loadAndPlay();
+    }
+    return () => {
+      isMounted = false;
+      if (sound) sound.unloadAsync();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTrack, isOpen]);
+
+  // Playback status update
+  const onPlaybackStatusUpdate = (status: any) => {
+    if (!status.isLoaded) return;
+    // Type guard for AVPlaybackStatusSuccess
+    if (status.isLoaded) {
+      setProgress(status.positionMillis ? Math.floor(status.positionMillis / 1000) : 0);
+      setDuration(status.durationMillis ? Math.floor(status.durationMillis / 1000) : 0);
+      setIsPlaying(status.isPlaying);
+      if (status.didJustFinish) {
+        handleNext();
+      }
+    }
+  };
+
+  // Play/Pause toggle
+  const handlePlayPause = async () => {
+    if (!sound) return;
+    if (isPlaying) {
+      await sound.pauseAsync();
+      setIsPlaying(false);
     } else {
-      Animated.timing(translateY, {
-        toValue: PLAYER_HEIGHT,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+      await sound.playAsync();
+      setIsPlaying(true);
     }
-  }, [isOpen, currentTrack]);
+  };
 
-  // Fake progress for demo (replace with real audio logic)
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    if (isOpen && duration > 0) {
-      interval = setInterval(() => {
-        setProgress((p) => {
-          if (p < duration) return p + 1;
-          else return duration;
-        });
-      }, 1000);
+  // Next track
+  const handleNext = async () => {
+    if (!tracks || !currentTrack) return;
+    const idx = tracks.findIndex(t => t.id === currentTrack.id);
+    if (idx >= 0 && idx < tracks.length - 1) {
+      setCurrentTrack(tracks[idx + 1]);
+    } else {
+      // Optionally: close player or loop
+      setCurrentTrack(tracks[0]);
     }
-    return () => { if (interval) clearInterval(interval); };
-  }, [isOpen, duration]);
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (sound) sound.unloadAsync();
+      setSound(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen || !currentTrack) return null;
 
@@ -62,7 +115,7 @@ export default function Player() {
           <Text style={styles.title} numberOfLines={1}>{currentTrack.title}</Text>
           <Text style={styles.artist} numberOfLines={1}>{artist}</Text>
         </View>
-        <TouchableOpacity style={styles.playPauseBtn} onPress={() => setIsPlaying(!isPlaying)}>
+        <TouchableOpacity style={styles.playPauseBtn} onPress={handlePlayPause}>
           <Ionicons name={isPlaying ? 'pause' : 'play'} size={26} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -76,7 +129,7 @@ export default function Player() {
           <View style={[styles.sliderThumb, { left: Math.max(0, sliderWidth * (progress/duration || 0) - 8) }]} />
         </View>
         <Text style={styles.time}>{formatTime(duration)}</Text>
-        <TouchableOpacity style={styles.nextBtn}>
+        <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
           <Ionicons name="play-skip-forward" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -89,7 +142,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 8,
     right: 8,
-    bottom: 8,
+    bottom: PLAYER_HEIGHT,
     height: PLAYER_HEIGHT,
     backgroundColor: '#181818',
     borderRadius: 16,
@@ -127,7 +180,7 @@ const styles = StyleSheet.create({
   },
   artist: {
     color: '#bdbdbd',
-    fontSize: 15,
+    fontSize: 14,
     marginBottom: 0,
   },
   playPauseBtn: {
