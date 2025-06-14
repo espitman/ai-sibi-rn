@@ -1,19 +1,48 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import RangeSlider from 'rn-range-slider';
 import { usePlayer } from './PlayerContext';
 
 const PLAYER_HEIGHT = 110;
+
+// Custom components for the slider
+const Thumb = () => (
+  <View style={styles.sliderThumb} />
+);
+
+const Rail = () => (
+  <View style={styles.sliderTrack} />
+);
+
+const RailSelected = () => (
+  <View style={styles.sliderFill} />
+);
 
 export default function Player() {
   const { isOpen, currentTrack, tracks, album, closePlayer, setCurrentTrack } = usePlayer();
   const [progress, setProgress] = useState(0); // seconds
   const [duration, setDuration] = useState(currentTrack?.duration || 0);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [sliderWidth, setSliderWidth] = useState(0);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const translateY = useRef(new Animated.Value(PLAYER_HEIGHT)).current;
+
+  // Slider render functions
+  const renderThumb = useCallback(() => <Thumb />, []);
+  const renderRail = useCallback(() => <Rail />, []);
+  const renderRailSelected = useCallback(() => <RailSelected />, []);
+
+  // Handle slider value change
+  const handleValueChange = useCallback(async (low: number) => {
+    if (!sound) return;
+    try {
+      await sound.setPositionAsync(low * 1000);
+      setProgress(low);
+    } catch (error) {
+      console.error('Error seeking:', error);
+    }
+  }, [sound]);
 
   // Load and play audio when currentTrack changes
   useEffect(() => {
@@ -24,21 +53,27 @@ export default function Player() {
         setSound(null);
       }
       if (currentTrack?.url) {
-        const { sound: newSound, status } = await Audio.Sound.createAsync(
-          { uri: currentTrack.url },
-          { shouldPlay: true },
-          onPlaybackStatusUpdate
-        );
-        if (isMounted) {
-          setSound(newSound);
-          if (status.isLoaded) {
-            setDuration(status.durationMillis ? Math.floor(status.durationMillis / 1000) : currentTrack.duration || 0);
-            setProgress(status.positionMillis ? Math.floor(status.positionMillis / 1000) : 0);
-          } else {
-            setDuration(currentTrack.duration || 0);
-            setProgress(0);
+        try {
+          const { sound: newSound, status } = await Audio.Sound.createAsync(
+            { uri: currentTrack.url },
+            { shouldPlay: true },
+            onPlaybackStatusUpdate
+          );
+          if (isMounted) {
+            setSound(newSound);
+            if (status.isLoaded) {
+              const newDuration = status.durationMillis ? Math.floor(status.durationMillis / 1000) : currentTrack.duration || 0;
+              const newProgress = status.positionMillis ? Math.floor(status.positionMillis / 1000) : 0;
+              setDuration(newDuration);
+              setProgress(newProgress);
+            } else {
+              setDuration(currentTrack.duration || 0);
+              setProgress(0);
+            }
+            setIsPlaying(true);
           }
-          setIsPlaying(true);
+        } catch (error) {
+          console.error('Error loading audio:', error);
         }
       }
     }
@@ -57,9 +92,10 @@ export default function Player() {
     if (!status.isLoaded) return;
     // Type guard for AVPlaybackStatusSuccess
     if (status.isLoaded) {
-      setProgress(status.positionMillis ? Math.floor(status.positionMillis / 1000) : 0);
-      setDuration(status.durationMillis ? Math.floor(status.durationMillis / 1000) : 0);
-      setIsPlaying(status.isPlaying);
+      const newProgress = status.positionMillis ? Math.floor(status.positionMillis / 1000) : 0;
+      const newDuration = status.durationMillis ? Math.floor(status.durationMillis / 1000) : 0;
+      setProgress(newProgress);
+      setDuration(newDuration);
       if (status.didJustFinish) {
         handleNext();
       }
@@ -69,12 +105,16 @@ export default function Player() {
   // Play/Pause toggle
   const handlePlayPause = async () => {
     if (!sound) return;
-    if (isPlaying) {
-      await sound.pauseAsync();
-      setIsPlaying(false);
-    } else {
-      await sound.playAsync();
-      setIsPlaying(true);
+    try {
+      if (isPlaying) {
+        await sound.pauseAsync();
+        setIsPlaying(false);
+      } else {
+        await sound.playAsync();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Error toggling play/pause:', error);
     }
   };
 
@@ -121,12 +161,19 @@ export default function Player() {
       </View>
       <View style={styles.bottomRow}>
         <Text style={styles.time}>{formatTime(progress)}</Text>
-        <View
-          style={styles.sliderTrack}
-          onLayout={e => setSliderWidth(e.nativeEvent.layout.width)}
-        >
-          <View style={[styles.sliderFill, { width: sliderWidth * (progress/duration || 0) }]} />
-          <View style={[styles.sliderThumb, { left: Math.max(0, sliderWidth * (progress/duration || 0) - 8) }]} />
+        <View style={styles.sliderContainer}>
+          <RangeSlider
+            style={styles.slider}
+            min={0}
+            max={duration}
+            step={1}
+            low={progress}
+            disableRange
+            renderThumb={renderThumb}
+            renderRail={renderRail}
+            renderRailSelected={renderRailSelected}
+            onSliderTouchEnd={handleValueChange}
+          />
         </View>
         <Text style={styles.time}>{formatTime(duration)}</Text>
         <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
@@ -199,26 +246,29 @@ const styles = StyleSheet.create({
     width: 38,
     textAlign: 'center',
   },
+  sliderContainer: {
+    flex: 1,
+    height: 20,
+    marginHorizontal: 6,
+    justifyContent: 'center',
+    marginTop: 5,
+  },
+  slider: {
+    width: '100%',
+    height: 20,
+  },
   sliderTrack: {
     flex: 1,
     height: 6,
     backgroundColor: '#23232a',
     borderRadius: 3,
-    marginHorizontal: 6,
-    overflow: 'visible',
-    justifyContent: 'center',
   },
   sliderFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
     height: 6,
     backgroundColor: '#fff',
     borderRadius: 3,
   },
   sliderThumb: {
-    position: 'absolute',
-    top: -4,
     width: 16,
     height: 16,
     borderRadius: 8,
